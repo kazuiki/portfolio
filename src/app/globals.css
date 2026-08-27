@@ -1,26 +1,735 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design tokens. Plain CSS variables on :root / .dark so they swap with theme.
+ * Mapped into Tailwind utilities via @theme inline below.
+ * Values taken from the reference site's live stylesheet (iging.tech).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light mode */
+  --bg: #ffffff;
+  --bg-elevated: #fafafa;
+  --fg: #0a0a0a;
+  --fg-muted: #525252;
+  --fg-subtle: #a3a3a3;
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --accent: #0a0a0a;
+  --accent-hover: #262626;
+  --avatar-bg: #f5f5f5;
+  --halftone: rgba(10, 10, 10, 0.9);
+  --fg-rgb: 10, 10, 10;
+
+  /* Reference gray scale (RGB triplets, iging.tech parity) */
+  --ink: 10 10 10;
+  --g50: 250 250 250;
+  --g100: 245 245 245;
+  --g200: 233 233 233;
+  --g300: 212 212 212;
+  --g400: 163 163 163;
+  --g500: 115 115 115;
+  --g600: 82 82 82;
+  --g700: 64 64 64;
+  --g800: 38 38 38;
+  --g900: 23 23 23;
+  --g950: 10 10 10;
+  --sel-bg: #0a0a0a;
+  --sel-fg: #ffffff;
 }
 
+.dark {
+  /* Dark mode */
+  --bg: #0a0a0a;
+  --bg-elevated: #171717;
+  --fg: #fafafa;
+  --fg-muted: #a3a3a3;
+  --fg-subtle: #737373;
+  --border: #262626;
+  --border-strong: #404040;
+  --accent: #fafafa;
+  --accent-hover: #d4d4d4;
+  --avatar-bg: #262626;
+  --halftone: rgba(244, 244, 245, 0.42);
+  --fg-rgb: 244, 244, 245;
+
+  /* Reference gray scale (dark) */
+  --ink: 244 244 245;
+  --g50: 24 24 27;
+  --g100: 30 30 34;
+  --g200: 42 42 48;
+  --g300: 58 58 66;
+  --g400: 138 138 146;
+  --g500: 160 160 168;
+  --g600: 184 184 192;
+  --g700: 206 206 212;
+  --g800: 228 228 232;
+  --g900: 240 240 243;
+  --g950: 250 250 250;
+  --sel-bg: #fafafa;
+  --sel-fg: #0a0a0a;
+}
+
+/*
+ * Map CSS variables to Tailwind color utilities.
+ * e.g. --bg -> bg-bg, --fg -> text-fg
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-avatar-bg: var(--avatar-bg);
+
+  /* Reference gray scale utilities */
+  --color-ink: rgb(var(--ink));
+  --color-g50: rgb(var(--g50));
+  --color-g100: rgb(var(--g100));
+  --color-g200: rgb(var(--g200));
+  --color-g300: rgb(var(--g300));
+  --color-g400: rgb(var(--g400));
+  --color-g500: rgb(var(--g500));
+  --color-g600: rgb(var(--g600));
+  --color-g700: rgb(var(--g700));
+  --color-g800: rgb(var(--g800));
+  --color-g900: rgb(var(--g900));
+  --color-g950: rgb(var(--g950));
+
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --animate-marquee: marquee 90s linear infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+ * Theme switch circular reveal (View Transitions API).
+ * The incoming theme expands radially from the theme toggle position,
+ * covering the viewport without any flash or hard cut.
+ * --vt-origin-x / --vt-origin-y / --vt-radius are set by src/lib/theme-transition.ts.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: vt-circular-reveal 850ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes vt-circular-reveal {
+  from {
+    clip-path: circle(0px at var(--vt-origin-x, 50%) var(--vt-origin-y, 50%));
+  }
+
+  to {
+    clip-path: circle(
+      var(--vt-radius, 150vmax) at var(--vt-origin-x, 50%)
+        var(--vt-origin-y, 50%)
+    );
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--sel-bg);
+    color: var(--sel-fg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none !important;
+    }
+  }
+}
+
+/* Geist Pixel — Vercel pixel font (logo/name), same source as bryllim.com */
+@font-face {
+  font-family: "Geist Pixel";
+  src: url("https://cdn.jsdelivr.net/gh/vercel/geist-pixel-font@main/fonts/webfonts/GeistPixel-Square.woff2")
+    format("woff2");
+  font-display: swap;
+}
+
+@layer components {
+  /* Geist Pixel — Vercel pixel font, used for the logo/name like bryllim.com */
+  .font-pixel {
+    font-family: "Geist Pixel", var(--font-mono), ui-monospace, monospace;
+  }
+
+  /* "01 — projects" section label — Geist Pixel like bryllim.com */
+  .section-label {
+    font-family: "Geist Pixel", var(--font-mono), ui-monospace, monospace;
+    font-size: 0.875rem;
+    color: var(--color-fg-muted);
+  }
+
+  /* "view all" right-aligned link — uppercase mono, like "ALL POSTS →" */
+  .view-all-link {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.125em;
+    text-transform: uppercase;
+    color: var(--color-fg-muted);
+    transition: color 150ms ease;
+  }
+
+  .view-all-link:hover {
+    color: var(--color-accent);
+  }
+
+  /* Sidebar nav link — Geist Mono like bryllim.com */
+  .nav-link {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.8125rem;
+    color: var(--color-fg-muted);
+    transition: color 150ms ease;
+  }
+
+  .nav-link:hover {
+    color: var(--color-accent);
+  }
+
+  .nav-link-active {
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+
+  /* Hero / primary link button */
+  .social-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-fg-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    transition:
+      color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .social-pill:hover {
+    color: var(--color-accent);
+    border-color: var(--color-border-strong);
+  }
+
+  /* Hero plain text link with external arrow: "github ↗" */
+  .hero-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.875rem;
+    color: var(--color-fg-muted);
+    transition: color 150ms ease;
+  }
+
+  .hero-link:hover {
+    color: var(--color-accent);
+  }
+
+  /* Small inline tech badge */
+  .tech-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-fg-muted);
+    background-color: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+  }
+
+  /* Arrow link: View project ->, Verify -> — Geist Mono like bryllim.com */
+  .arrow-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-fg-muted);
+    transition: color 150ms ease;
+  }
+
+  .arrow-link:hover {
+    color: var(--color-accent);
+  }
+
+  .arrow-link > svg {
+    transition: transform 150ms ease;
+  }
+
+  .arrow-link:hover > svg {
+    transform: translateX(2px);
+  }
+
+  /* Card base */
+  .card {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: border-color 150ms ease;
+  }
+
+  .card:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-fg);
+    line-height: 1.4;
+  }
+
+  /* Focus visible styles for accessibility */
+  .focus-visible-ring:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /*
+   * Halftone dot field, taken from bryllim.com: soft-edged ink dots
+   * (var --halftone swaps to light dots in dark mode) on a 9px grid.
+   * Pair with the corner masks below and a low opacity for the
+   * fixed page-wide backdrop.
+   */
+  .halftone-bg {
+    background-image: radial-gradient(
+      circle at center,
+      var(--halftone) 1px,
+      transparent 1.6px
+    );
+    background-size: 9px 9px;
+  }
+
+  /* Wider 13px variant used for the top-right backdrop patch */
+  .halftone-bg-wide {
+    background-size: 13px 13px;
+  }
+
+  /* Radial fades anchored to the top-right / bottom-left corners */
+  .mask-tr {
+    -webkit-mask-image: radial-gradient(
+      ellipse 80% 80% at 100% 0%,
+      #000 0%,
+      transparent 65%
+    );
+    mask-image: radial-gradient(
+      ellipse 80% 80% at 100% 0%,
+      #000 0%,
+      transparent 65%
+    );
+  }
+
+  .mask-bl {
+    -webkit-mask-image: radial-gradient(
+      ellipse 80% 80% at 0% 100%,
+      #000 0%,
+      transparent 65%
+    );
+    mask-image: radial-gradient(
+      ellipse 80% 80% at 0% 100%,
+      #000 0%,
+      transparent 65%
+    );
+  }
+
+  /*
+   * Project card: spec-compliant hover — border highlight + slight lift,
+   * 150ms ease-out. No heavy shadows (elevation via border only).
+   */
+  .project-card {
+    transition:
+      transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 150ms ease;
+  }
+
+  .project-card:hover {
+    border-color: var(--color-border-strong);
+    transform: translateY(-2px);
+  }
+
+  /*
+   * Fanned three-card deck (desktop).
+   * One center/front card, two side cards partially visible behind it.
+   * Slot classes define resting poses; flight keyframes animate the swap.
+   * Card wrapper is absolute center-anchored; transform uses translate(-50%, -50%)
+   * to keep the card's center at the slot position.
+   */
+  .deck-slot {
+    transform-origin: center center;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    /* Resting poses use transition for smooth arrival from flight animations */
+    transition:
+      transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 150ms ease;
+  }
+
+  /* Center: front and centered */
+  .deck-slot-center {
+    z-index: 3;
+    transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
+    opacity: 1;
+  }
+
+  /* Left side: behind center, offset left/down, rotated, smaller, dimmed */
+  .deck-slot-left {
+    z-index: 1;
+    transform: translate(-50%, -50%) translateX(-150px) translateY(32px)
+      scale(0.82) rotate(-12deg);
+    opacity: 0.6;
+  }
+
+  /* Right side: mirrored */
+  .deck-slot-right {
+    z-index: 1;
+    transform: translate(-50%, -50%) translateX(150px) translateY(32px)
+      scale(0.82) rotate(12deg);
+    opacity: 0.6;
+  }
+
+  /* Hover side cards: slight lift toward center */
+  .deck-slot-left:hover,
+  .deck-slot-right:hover {
+    opacity: 0.8;
+    transition:
+      transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 150ms ease;
+  }
+
+  /* Flight animations — each is a shallow mirrored arc.
+   * Duration ~700ms with physical easing to match the reference feel. */
+  @keyframes deck-flight-from-left {
+    0% {
+      transform: translate(-50%, -50%) translateX(-150px) translateY(32px)
+        scale(0.82) rotate(-12deg);
+      opacity: 0.6;
+    }
+    45% {
+      transform: translate(-50%, -50%) translateX(-52px) translateY(-22px)
+        scale(0.94) rotate(-6deg);
+      opacity: 0.88;
+    }
+    72% {
+      transform: translate(-50%, -50%) translateX(10px) translateY(-6px)
+        scale(0.94) rotate(1deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes deck-flight-from-right {
+    0% {
+      transform: translate(-50%, -50%) translateX(150px) translateY(32px)
+        scale(0.82) rotate(12deg);
+      opacity: 0.6;
+    }
+    45% {
+      transform: translate(-50%, -50%) translateX(52px) translateY(-22px)
+        scale(0.94) rotate(6deg);
+      opacity: 0.88;
+    }
+    72% {
+      transform: translate(-50%, -50%) translateX(-10px) translateY(-6px)
+        scale(0.94) rotate(-1deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes deck-flight-to-left {
+    0% {
+      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
+      opacity: 1;
+    }
+    28% {
+      transform: translate(-50%, -50%) translateX(-10px) translateY(-6px)
+        scale(0.94) rotate(-1deg);
+      opacity: 1;
+    }
+    55% {
+      transform: translate(-50%, -50%) translateX(-52px) translateY(-22px)
+        scale(0.94) rotate(-6deg);
+      opacity: 0.88;
+    }
+    100% {
+      transform: translate(-50%, -50%) translateX(-150px) translateY(32px)
+        scale(0.82) rotate(-12deg);
+      opacity: 0.6;
+    }
+  }
+
+  @keyframes deck-flight-to-right {
+    0% {
+      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
+      opacity: 1;
+    }
+    28% {
+      transform: translate(-50%, -50%) translateX(10px) translateY(-6px)
+        scale(0.94) rotate(1deg);
+      opacity: 1;
+    }
+    55% {
+      transform: translate(-50%, -50%) translateX(52px) translateY(-22px)
+        scale(0.94) rotate(6deg);
+      opacity: 0.88;
+    }
+    100% {
+      transform: translate(-50%, -50%) translateX(150px) translateY(32px)
+        scale(0.82) rotate(12deg);
+      opacity: 0.6;
+    }
+  }
+
+  .deck-flight-from-left {
+    animation: deck-flight-from-left 850ms cubic-bezier(0.22, 1, 0.36, 1)
+      forwards;
+  }
+
+  .deck-flight-from-right {
+    animation: deck-flight-from-right 850ms cubic-bezier(0.22, 1, 0.36, 1)
+      forwards;
+  }
+
+  .deck-flight-to-left {
+    animation: deck-flight-to-left 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .deck-flight-to-right {
+    animation: deck-flight-to-right 850ms cubic-bezier(0.22, 1, 0.36, 1)
+      forwards;
+  }
+
+  /* Reduced motion: disable flight arcs; instant pose switch with short cross-fade */
+  @media (prefers-reduced-motion: reduce) {
+    .deck-slot {
+      transition:
+        transform 0.01ms,
+        opacity 80ms ease;
+    }
+
+    .deck-flight-from-left,
+    .deck-flight-from-right,
+    .deck-flight-to-left,
+    .deck-flight-to-right {
+      animation: none !important;
+      transition:
+        transform 0.01ms,
+        opacity 80ms ease;
+    }
+  }
+
+  /*
+   * Full-bleed horizontal scroll-snap carousel (the "deck").
+   * Mobile: cards bleed to the viewport edges via margin-inline trick and
+   * the track is horizontally clipped; desktop: contained inline within the
+   * content column and overflow is visible so arrows can sit outside.
+   */
+  .deck {
+    height: 24rem;
+    margin-inline: calc(50% - 50vw);
+    position: relative;
+    overflow: clip;
+  }
+
+  @media (min-width: 640px) {
+    .deck {
+      height: 22rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .deck {
+      margin-inline: 0;
+      overflow: visible;
+    }
+  }
+
+  /* Horizontal snap track. Hidden scrollbar for a clean native swipe. */
+  .deck-track {
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.5rem;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  @media (min-width: 768px) {
+    .deck-track {
+      scroll-padding-inline: 0;
+    }
+  }
+
+  .deck-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .deck-track.is-dragging {
+    cursor: grabbing !important;
+    scroll-snap-type: none;
+  }
+
+  /* Each card snaps to the start of the track. */
+  .deck-card {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  /* Edge fade masks on mobile so off-screen cards hint at more content. */
+  .deck-mask {
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.5rem;
+    z-index: 5;
+  }
+
+  .deck-mask-left {
+    left: 0;
+    background: linear-gradient(to right, var(--color-bg), transparent);
+  }
+
+  .deck-mask-right {
+    right: 0;
+    background: linear-gradient(to left, var(--color-bg), transparent);
+  }
+
+  @media (min-width: 768px) {
+    .deck-mask {
+      display: none;
+    }
+  }
+
+  /* Prev/Next arrow buttons — desktop only, sit just outside the deck. */
+  .deck-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-fg-muted);
+    transition:
+      color 150ms ease,
+      border-color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .deck-arrow:hover:not(:disabled) {
+    color: var(--color-fg);
+    border-color: var(--color-border-strong);
+    background-color: var(--color-bg-elevated);
+  }
+
+  .deck-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /*
+   * Portrait dissolve, from bryllim.com: fine 5px grid of dots colored the
+   * same as the page background, densest at the bottom of the photo and
+   * fading upward — so the lower edge melts into the page.
+   */
+  .halftone-photo {
+    pointer-events: none;
+    background-image: radial-gradient(
+      circle at center,
+      var(--bg) 1px,
+      transparent 1.5px
+    );
+    background-size: 5px 5px;
+    -webkit-mask-image: linear-gradient(to top, #000, transparent 80%);
+    mask-image: linear-gradient(to top, #000, transparent 80%);
+  }
+
+  /*
+   * Two faint rows of dots below the tech marquee, fading downward.
+   * Sparse 12px grid so only ~2 lines of dots are visible, like the reference.
+   */
+  .marquee-dots {
+    pointer-events: none;
+    background-image: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--fg-subtle) 55%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 12px 12px;
+    background-position: center top;
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  }
 }
