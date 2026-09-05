@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { projects, type Project } from "@/data/projects";
@@ -28,6 +28,16 @@ interface DeckSlots {
   right?: string;
 }
 
+function slotFor(
+  id: string,
+  slots: DeckSlots,
+): keyof typeof slotClasses | null {
+  if (slots.center === id) return "center";
+  if (slots.left === id) return "left";
+  if (slots.right === id) return "right";
+  return null;
+}
+
 export function ProjectsSection() {
   const [slots, setSlots] = useState<DeckSlots>(() => ({
     center: projects[0]?.id,
@@ -45,8 +55,6 @@ export function ProjectsSection() {
   };
 
   const center = projects.find((p) => p.id === slots.center) ?? projects[0];
-  const left = projects.find((p) => p.id === slots.left);
-  const right = projects.find((p) => p.id === slots.right);
 
   return (
     <>
@@ -69,59 +77,45 @@ export function ProjectsSection() {
         </div>
 
         <div className="absolute inset-x-0 top-0 bottom-16 overflow-visible">
-          {left && (
-            <div
-              key={left.id}
-              className={cn(
-                "deck-slot absolute top-1/2 left-1/2 w-[360px]",
-                slotClasses.left,
-              )}
-              role="button"
-              tabIndex={0}
-              aria-label={`Bring ${left.name} project card to the front`}
-              onClick={() => promote(left.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  promote(left.id);
+          {/* Stable keys (project.id) keep the same DOM node across a swap so
+              CSS can interpolate deck-slot-left/center/right transforms —
+              the bryllim.com activateCard() motion. Keying by slot remounts
+              the node and the glide never plays. */}
+          {projects.slice(0, 3).map((project) => {
+            const slot = slotFor(project.id, slots);
+            if (!slot) return null;
+            const isCenter = slot === "center";
+
+            return (
+              <div
+                key={project.id}
+                className={cn(
+                  "deck-slot absolute top-1/2 left-1/2 w-[360px]",
+                  slotClasses[slot],
+                )}
+                role={isCenter ? undefined : "button"}
+                tabIndex={isCenter ? undefined : 0}
+                aria-label={
+                  isCenter
+                    ? undefined
+                    : `Bring ${project.name} project card to the front`
                 }
-              }}
-            >
-              <ProjectCard project={left} />
-            </div>
-          )}
-          {right && (
-            <div
-              key={right.id}
-              className={cn(
-                "deck-slot absolute top-1/2 left-1/2 w-[360px]",
-                slotClasses.right,
-              )}
-              role="button"
-              tabIndex={0}
-              aria-label={`Bring ${right.name} project card to the front`}
-              onClick={() => promote(right.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  promote(right.id);
+                onClick={isCenter ? undefined : () => promote(project.id)}
+                onKeyDown={
+                  isCenter
+                    ? undefined
+                    : (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          promote(project.id);
+                        }
+                      }
                 }
-              }}
-            >
-              <ProjectCard project={right} />
-            </div>
-          )}
-          {center && (
-            <div
-              key={center.id}
-              className={cn(
-                "deck-slot absolute top-1/2 left-1/2 w-[360px]",
-                slotClasses.center,
-              )}
-            >
-              <ProjectCard project={center} />
-            </div>
-          )}
+              >
+                <ProjectCard project={project} />
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -147,7 +141,7 @@ function ProjectCard({ project }: ProjectCardProps) {
   const badge = project.highlight ?? project.type;
 
   return (
-    <article className="project-card border-border bg-bg-elevated bo11rder relative flex h-[310px] flex-col rounded-2xl p-5">
+    <article className="project-card relative flex h-[310px] flex-col rounded-2xl border border-[rgba(255,255,255,0.8)] bg-[var(--bg)] p-5 dark:border-black dark:bg-black">
       {/* Achievement / type pill + secondary tags */}
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="bg-fg text-bg inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[9px] tracking-wider uppercase">
@@ -193,7 +187,7 @@ function ProjectCard({ project }: ProjectCardProps) {
             className="border-border h-12 w-12 shrink-0 rounded-xl border shadow-sm"
           />
         ) : (
-          <div className="border-border bg-bg flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
+          <div className="border-border flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-[var(--bg)] dark:bg-black">
             <span
               className={cn(
                 project.icon && project.icon.length > 1
@@ -220,13 +214,13 @@ function ProjectCard({ project }: ProjectCardProps) {
           {visibleTech.map((tech) => (
             <span
               key={tech}
-              className="border-border bg-bg text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
+              className="border-border text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-[var(--bg)] dark:bg-black"
             >
               <TechIcon name={tech} className="h-4 w-4" aria-hidden="true" />
             </span>
           ))}
           {extraTech > 0 && (
-            <span className="border-border bg-bg text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">
+            <span className="border-border text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-[var(--bg)] text-xs font-semibold dark:bg-black">
               +{extraTech}
             </span>
           )}
