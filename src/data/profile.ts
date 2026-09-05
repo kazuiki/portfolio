@@ -19,7 +19,7 @@ export const profile: Profile = {
   title: "IT Graduate",
   subtitle: "Aspiring Software Developer",
   role: "Aspiring Software Developer",
-  avatar: mainImage.src, // [PROFILE IMAGE] placeholder
+  avatar: mainImage.src,
   email: "johnpritch21@gmail.com",
   github: "https://github.com/",
   githubHandle: "github",

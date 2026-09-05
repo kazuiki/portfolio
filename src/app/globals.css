@@ -414,178 +414,87 @@
 
   /*
    * Fanned three-card deck (desktop).
-   * One center/front card, two side cards partially visible behind it.
-   * Slot classes define resting poses; flight keyframes animate the swap.
-   * Card wrapper is absolute center-anchored; transform uses translate(-50%, -50%)
-   * to keep the card's center at the slot position.
+   * One center/front card, two side cards peek out behind it.
+   * Side offsets leave a clear visible peek outside the center card while still
+   * fitting inside the main scroll area. Card wrapper is absolute
+   * center-anchored; translate(-50%, -50%) keeps the card's center on the slot.
    */
   .deck-slot {
     transform-origin: center center;
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-    /* Resting poses use transition for smooth arrival from flight animations */
     transition:
-      transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 150ms ease;
+      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.35s ease;
+    will-change: transform;
+    outline: none;
   }
 
-  /* Center: front and centered */
+  /* Center: front and upright */
   .deck-slot-center {
-    z-index: 3;
-    transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
-    opacity: 1;
+    z-index: 30;
+    transform: translate(-50%, -50%) translateY(0) rotate(0deg) scale(1);
+    box-shadow: 0 26px 55px -22px rgba(10, 10, 10, 0.3);
   }
 
-  /* Left side: behind center, offset left/down, rotated, smaller, dimmed */
+  /* Left: behind center, offset left/down, rotated, smaller */
   .deck-slot-left {
-    z-index: 1;
-    transform: translate(-50%, -50%) translateX(-150px) translateY(32px)
-      scale(0.82) rotate(-12deg);
-    opacity: 0.6;
+    z-index: 10;
+    transform: translate(-50%, -50%) translateX(-220px) translateY(18px)
+      rotate(-12deg) scale(0.9);
+    box-shadow: 0 16px 32px -18px rgba(10, 10, 10, 0.25);
+    cursor: pointer;
   }
 
-  /* Right side: mirrored */
+  /* Right: mirrored */
   .deck-slot-right {
-    z-index: 1;
-    transform: translate(-50%, -50%) translateX(150px) translateY(32px)
-      scale(0.82) rotate(12deg);
-    opacity: 0.6;
+    z-index: 20;
+    transform: translate(-50%, -50%) translateX(220px) translateY(18px)
+      rotate(12deg) scale(0.9);
+    box-shadow: 0 16px 32px -18px rgba(10, 10, 10, 0.25);
+    cursor: pointer;
   }
 
-  /* Hover side cards: slight lift toward center */
+  /* Subtle dim on back cards using opacity instead of overlay for better visibility.
+     The original overlay was painting white over cards making them blank. */
+  .deck-slot-left,
+  .deck-slot-right {
+    opacity: 0.7;
+  }
+
   .deck-slot-left:hover,
   .deck-slot-right:hover {
-    opacity: 0.8;
-    transition:
-      transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 150ms ease;
+    opacity: 0.9;
   }
 
-  /* Flight animations — each is a shallow mirrored arc.
-   * Duration ~700ms with physical easing to match the reference feel. */
-  @keyframes deck-flight-from-left {
-    0% {
-      transform: translate(-50%, -50%) translateX(-150px) translateY(32px)
-        scale(0.82) rotate(-12deg);
-      opacity: 0.6;
-    }
-    45% {
-      transform: translate(-50%, -50%) translateX(-52px) translateY(-22px)
-        scale(0.94) rotate(-6deg);
-      opacity: 0.88;
-    }
-    72% {
-      transform: translate(-50%, -50%) translateX(10px) translateY(-6px)
-        scale(0.94) rotate(1deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
-      opacity: 1;
-    }
+  /* Hover lifts */
+  .deck-slot-center:hover {
+    transform: translate(-50%, -50%) translateY(-7px) scale(1.015);
+    box-shadow: 0 34px 65px -22px rgba(10, 10, 10, 0.34);
   }
 
-  @keyframes deck-flight-from-right {
-    0% {
-      transform: translate(-50%, -50%) translateX(150px) translateY(32px)
-        scale(0.82) rotate(12deg);
-      opacity: 0.6;
-    }
-    45% {
-      transform: translate(-50%, -50%) translateX(52px) translateY(-22px)
-        scale(0.94) rotate(6deg);
-      opacity: 0.88;
-    }
-    72% {
-      transform: translate(-50%, -50%) translateX(-10px) translateY(-6px)
-        scale(0.94) rotate(-1deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
-      opacity: 1;
-    }
+  .deck-slot-left:hover {
+    transform: translate(-50%, -50%) translateX(-215px) translateY(10px)
+      rotate(-9deg) scale(0.93);
+    z-index: 25;
   }
 
-  @keyframes deck-flight-to-left {
-    0% {
-      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
-      opacity: 1;
-    }
-    28% {
-      transform: translate(-50%, -50%) translateX(-10px) translateY(-6px)
-        scale(0.94) rotate(-1deg);
-      opacity: 1;
-    }
-    55% {
-      transform: translate(-50%, -50%) translateX(-52px) translateY(-22px)
-        scale(0.94) rotate(-6deg);
-      opacity: 0.88;
-    }
-    100% {
-      transform: translate(-50%, -50%) translateX(-150px) translateY(32px)
-        scale(0.82) rotate(-12deg);
-      opacity: 0.6;
-    }
+  .deck-slot-right:hover {
+    transform: translate(-50%, -50%) translateX(215px) translateY(10px)
+      rotate(9deg) scale(0.93);
+    z-index: 25;
   }
 
-  @keyframes deck-flight-to-right {
-    0% {
-      transform: translate(-50%, -50%) scale(0.92) rotate(0deg);
-      opacity: 1;
-    }
-    28% {
-      transform: translate(-50%, -50%) translateX(10px) translateY(-6px)
-        scale(0.94) rotate(1deg);
-      opacity: 1;
-    }
-    55% {
-      transform: translate(-50%, -50%) translateX(52px) translateY(-22px)
-        scale(0.94) rotate(6deg);
-      opacity: 0.88;
-    }
-    100% {
-      transform: translate(-50%, -50%) translateX(150px) translateY(32px)
-        scale(0.82) rotate(12deg);
-      opacity: 0.6;
-    }
+  /* Only the centre card's links are interactive */
+  .deck-slot-left a,
+  .deck-slot-right a {
+    pointer-events: none;
   }
 
-  .deck-flight-from-left {
-    animation: deck-flight-from-left 850ms cubic-bezier(0.22, 1, 0.36, 1)
-      forwards;
-  }
-
-  .deck-flight-from-right {
-    animation: deck-flight-from-right 850ms cubic-bezier(0.22, 1, 0.36, 1)
-      forwards;
-  }
-
-  .deck-flight-to-left {
-    animation: deck-flight-to-left 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-
-  .deck-flight-to-right {
-    animation: deck-flight-to-right 850ms cubic-bezier(0.22, 1, 0.36, 1)
-      forwards;
-  }
-
-  /* Reduced motion: disable flight arcs; instant pose switch with short cross-fade */
+  /* Reduced motion: drop the swap glide to an instant pose change */
   @media (prefers-reduced-motion: reduce) {
     .deck-slot {
       transition:
         transform 0.01ms,
-        opacity 80ms ease;
-    }
-
-    .deck-flight-from-left,
-    .deck-flight-from-right,
-    .deck-flight-to-left,
-    .deck-flight-to-right {
-      animation: none !important;
-      transition:
-        transform 0.01ms,
-        opacity 80ms ease;
+        box-shadow 0.01ms;
     }
   }
 

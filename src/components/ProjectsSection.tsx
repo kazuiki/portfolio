@@ -8,16 +8,18 @@ import { cn } from "@/lib/utils";
 import { SectionHeader } from "./SectionHeader";
 
 /*
- * Fanned deck slots. All three cards share the same absolute anchor
- * (top-1/2 left-1/2) and width; the pose classes in globals.css handle
- * position/rotation/scale so slot swaps animate as one smooth transform.
- * Promoting swaps the clicked card with the front card only — the third
- * card never moves, so exactly two cards glide in mirrored arcs.
+ * Fanned deck, ported from bryllim.com.
+ * One center/front card, two side cards peek out behind it. Swapping is a
+ * pure CSS transform transition: promoting a side card reassigns the
+ * deck-slot-center / deck-slot-left / deck-slot-right poses and the browser
+ * animates the glide (see .deck-slot in globals.css). The clicked side card
+ * takes center; the old/ center drops into the slot the clicked card left, so
+ * exactly two cards move in mirrored arcs.
  */
 const slotClasses = {
   center: "deck-slot-center",
-  left: "deck-slot-left opacity-40 hover:opacity-75",
-  right: "deck-slot-right opacity-40 hover:opacity-75",
+  left: "deck-slot-left",
+  right: "deck-slot-right",
 } as const;
 
 interface DeckSlots {
@@ -32,33 +34,12 @@ export function ProjectsSection() {
     left: projects[1]?.id,
     right: projects[2]?.id,
   }));
-  // Per-card swap animation currently playing (cleared on animationend)
-  const [flights, setFlights] = useState<Record<string, string | undefined>>(
-    {},
-  );
-
-  const isSwapping = Object.keys(flights).length > 0;
-
-  const clearFlight = (id: string) => {
-    setFlights((prev) => {
-      if (!(id in prev)) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-  };
 
   const promote = (id: string) => {
-    if (isSwapping || !slots.center || id === slots.center) return;
-    const fromLeft = slots.left === id;
-    const demoted = slots.center;
-    setFlights({
-      [id]: fromLeft ? "deck-flight-from-left" : "deck-flight-from-right",
-      [demoted]: fromLeft ? "deck-flight-to-left" : "deck-flight-to-right",
-    });
+    if (!slots.center || id === slots.center) return;
+    const from = slots.left === id ? "left" : "right";
     setSlots((prev) => {
       if (prev.center === id) return prev;
-      const from = prev.left === id ? "left" : "right";
       return { ...prev, center: id, [from]: prev.center };
     });
   };
@@ -76,28 +57,37 @@ export function ProjectsSection() {
         viewAllLabel="all projects"
       />
 
-      {/* Fanned deck (desktop): clicking a back card's button swaps it with the front card */}
-      <div className="relative mt-16 hidden pb-16 lg:block">
+      {/* Fanned deck (desktop): clicking a back card swaps it with the front.
+          Side cards intentionally peek outside the center card while staying
+          inside the main scroll area so they remain visible and clickable.
+          Negative margins break the deck out of the max-w-[720px] container
+          so side cards are not clipped. */}
+      <div className="relative mx-[-200px] mt-16 hidden overflow-visible pb-16 md:mx-[-280px] lg:block">
         {/* Invisible sizer keeps the deck height tied to the front card */}
         <div className="invisible mx-auto w-[360px]" aria-hidden="true">
-          <ProjectCard project={center} />
+          {center && <ProjectCard project={center} />}
         </div>
 
-        <div className="absolute inset-x-0 top-0 bottom-16">
+        <div className="absolute inset-x-0 top-0 bottom-16 overflow-visible">
           {left && (
             <div
               key={left.id}
               className={cn(
                 "deck-slot absolute top-1/2 left-1/2 w-[360px]",
                 slotClasses.left,
-                flights[left.id],
               )}
-              onAnimationEnd={(e) => {
-                if (e.animationName.startsWith("deck-flight-"))
-                  clearFlight(left.id);
+              role="button"
+              tabIndex={0}
+              aria-label={`Bring ${left.name} project card to the front`}
+              onClick={() => promote(left.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  promote(left.id);
+                }
               }}
             >
-              <ProjectCard project={left} onPromote={() => promote(left.id)} />
+              <ProjectCard project={left} />
             </div>
           )}
           {right && (
@@ -106,17 +96,19 @@ export function ProjectsSection() {
               className={cn(
                 "deck-slot absolute top-1/2 left-1/2 w-[360px]",
                 slotClasses.right,
-                flights[right.id],
               )}
-              onAnimationEnd={(e) => {
-                if (e.animationName.startsWith("deck-flight-"))
-                  clearFlight(right.id);
+              role="button"
+              tabIndex={0}
+              aria-label={`Bring ${right.name} project card to the front`}
+              onClick={() => promote(right.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  promote(right.id);
+                }
               }}
             >
-              <ProjectCard
-                project={right}
-                onPromote={() => promote(right.id)}
-              />
+              <ProjectCard project={right} />
             </div>
           )}
           {center && (
@@ -145,88 +137,142 @@ export function ProjectsSection() {
 
 interface ProjectCardProps {
   project: Project;
-  /** When set, the CTA promotes this card to the front instead of opening the link */
-  onPromote?: () => void;
 }
 
-function ProjectCard({ project, onPromote }: ProjectCardProps) {
+function ProjectCard({ project }: ProjectCardProps) {
   const visibleTech = project.technologies.slice(0, 5);
   const extraTech = project.technologies.length - visibleTech.length;
   const projectHref = project.link ?? "#";
+  // Dark achievement pill: the project's highlight if set, else its type.
+  const badge = project.highlight ?? project.type;
 
   return (
-    <article className="project-card border-border bg-bg-elevated flex h-full flex-col rounded-2xl border p-6">
-      {/* Icon + name */}
-      <div className="flex items-center gap-4">
-        <div className="border-border bg-bg flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
+    <article className="project-card border-border bg-bg-elevated bo11rder relative flex h-[310px] flex-col rounded-2xl p-5">
+      {/* Achievement / type pill + secondary tags */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="bg-fg text-bg inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[9px] tracking-wider uppercase">
+          {project.highlight && (
+            <svg
+              viewBox="0 0 13 22"
+              fill="currentColor"
+              aria-hidden="true"
+              className="h-[17px] w-auto shrink-0"
+            >
+              <path
+                d="M0 -4C2.1 -2.6 2.1 2.6 0 4C-2.1 2.6 -2.1 -2.6 0 -4Z"
+                transform="translate(8 5) rotate(46)"
+              />
+              <path
+                d="M0 -4.3C2.3 -2.8 2.3 2.8 0 4.3C-2.3 2.8 -2.3 -2.8 0 -4.3Z"
+                transform="translate(4.6 11) rotate(14)"
+              />
+              <path
+                d="M0 -4C2.1 -2.6 2.1 2.6 0 4C-2.1 2.6 -2.1 -2.6 0 -4Z"
+                transform="translate(8 17) rotate(-30)"
+              />
+            </svg>
+          )}
+          {badge}
+        </span>
+        {project.tags?.map((tag) => (
           <span
-            className={
-              project.icon && project.icon.length > 1
-                ? "text-fg font-mono text-sm font-bold"
-                : "text-fg text-lg font-bold"
-            }
+            key={tag}
+            className="border-border text-fg-muted rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-wider uppercase"
           >
-            {project.icon ?? project.name.charAt(0)}
+            {tag}
           </span>
-        </div>
+        ))}
+      </div>
+
+      {/* Icon / image + name */}
+      <div className="mt-4 flex items-center gap-3.5">
+        {project.image ? (
+          <img
+            src={project.image}
+            alt={`${project.name} app icon`}
+            className="border-border h-12 w-12 shrink-0 rounded-xl border shadow-sm"
+          />
+        ) : (
+          <div className="border-border bg-bg flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
+            <span
+              className={cn(
+                project.icon && project.icon.length > 1
+                  ? "text-fg font-mono text-sm font-bold"
+                  : "text-fg text-lg font-bold",
+              )}
+            >
+              {project.icon ?? project.name.charAt(0)}
+            </span>
+          </div>
+        )}
         <h3 className="font-pixel text-fg text-base leading-tight">
           {project.name}
         </h3>
       </div>
 
-      {/* Date + type badge */}
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-        <time className="text-fg-muted font-mono text-xs">{project.date}</time>
-        <span className="border-border bg-bg text-fg-muted inline-flex items-center rounded-full border px-2.5 py-1 font-mono text-[10px] font-medium tracking-[0.1em] uppercase">
-          {project.type}
-        </span>
-      </div>
-
-      {/* Description */}
-      <p className="text-fg-muted mt-3 line-clamp-3 text-sm leading-relaxed">
+      <p className="text-fg-muted mt-3 line-clamp-3 text-[13px] leading-relaxed">
         {project.description}
       </p>
 
       {/* Tech icons */}
-      <div className="mt-5 mb-6 flex items-center gap-2">
-        {visibleTech.map((tech) => (
-          <span
-            key={tech}
-            className="border-border bg-bg text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
-          >
-            <TechIcon name={tech} className="h-4 w-4" aria-hidden="true" />
-          </span>
-        ))}
-        {extraTech > 0 && (
-          <span className="border-border bg-bg text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">
-            +{extraTech}
-          </span>
-        )}
-      </div>
+      {project.technologies.length > 0 && (
+        <div className="mt-4 flex items-center gap-2">
+          {visibleTech.map((tech) => (
+            <span
+              key={tech}
+              className="border-border bg-bg text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
+            >
+              <TechIcon name={tech} className="h-4 w-4" aria-hidden="true" />
+            </span>
+          ))}
+          {extraTech > 0 && (
+            <span className="border-border bg-bg text-fg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">
+              +{extraTech}
+            </span>
+          )}
+        </div>
+      )}
 
-      {/* View project CTA: front card opens the link, back cards promote */}
+      {/* Store badges (only when the project ships them) */}
+      {(project.appStoreUrl || project.playStoreUrl) && (
+        <div className="mt-4 flex items-center gap-2">
+          {project.appStoreUrl && (
+            <a
+              href={project.appStoreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Get ${project.name} on the App Store`}
+              className="text-fg-muted transition-opacity hover:opacity-80"
+            >
+              App Store
+            </a>
+          )}
+          {project.playStoreUrl && (
+            <a
+              href={project.playStoreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Get ${project.name} on Google Play`}
+              className="text-fg-muted transition-opacity hover:opacity-80"
+            >
+              Google Play
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* View project CTA: only interactive on the centre card (back cards
+          promote via the card click handled by the deck wrapper) */}
       <div className="border-border mt-auto border-t pt-5">
-        {onPromote ? (
-          <button
-            type="button"
-            onClick={onPromote}
-            aria-label={`Bring ${project.name} project card to the front`}
-            className="focus-visible-ring bg-fg text-bg hover:bg-accent-hover flex w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-medium transition-colors"
-          >
-            View project
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        ) : (
-          <a
-            href={projectHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="focus-visible-ring bg-fg text-bg hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-medium transition-colors"
-          >
-            View project
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        )}
+        <a
+          href={projectHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="focus-visible-ring bg-fg text-bg hover:bg-accent-hover flex w-full items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-medium transition-colors"
+        >
+          View project
+          <ArrowRight className="h-4 w-4" />
+        </a>
       </div>
     </article>
   );

@@ -25,10 +25,10 @@ export function AppShell({ children }: AppShellProps) {
         onClose={() => setMobileMenuOpen(false)}
       />
 
-      {/* Main content area */}
+      {/* Main content area - overflow:visible so side cards aren't clipped */}
       <main
         className={cn(
-          "relative z-10 min-w-0 flex-1 overflow-x-hidden overflow-y-auto",
+          "relative z-10 min-w-0 flex-1 overflow-visible",
           "px-6 md:px-[64px]",
           "py-16 md:py-16",
         )}

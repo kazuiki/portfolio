@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deck Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px;
+      background: #ffffff;
+      font-family: system-ui, sans-serif;
+    }
+
+    .container {
+      position: relative;
+      height: 500px;
+      margin: 0 auto;
+      max-width: 1200px;
+    }
+
+    .deck-slot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 360px;
+      transform-origin: center center;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .card {
+      background: #fafafa;
+      border: 1px solid #e5e5e5;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 26px 55px -22px rgba(10, 10, 10, 0.3);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #0a0a0a;
+    }
+
+    .card p {
+      margin: 0;
+      color: #525252;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #0a0a0a;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 9px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .tech-icons {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tech-icon {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #e5e5e5;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #525252;
+    }
+
+    /* Center position */
+    .deck-slot-center {
+      z-index: 30;
+      transform: translate(-50%, -50%) translateY(0) rotate(0deg) scale(1);
+    }
+
+    /* Left position - TESTING DIFFERENT VALUES */
+    .deck-slot-left {
+      z-index: 10;
+      transform: translate(-50%, -50%) translateX(-220px) translateY(18px) rotate(-12deg) scale(0.9);
+      cursor: pointer;
+    }
+
+    /* Right position */
+    .deck-slot-right {
+      z-index: 20;
+      transform: translate(-50%, -50%) translateX(220px) translateY(18px) rotate(12deg) scale(0.9);
+      cursor: pointer;
+    }
+
+    /* OVERLAY TESTING - This might be the culprit */
+    .deck-slot-left::after,
+    .deck-slot-right::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(255, 255, 255, 0.05);
+      pointer-events: none;
+    }
+
+    /* Hover effect */
+    .deck-slot-left:hover,
+    .deck-slot-right:hover {
+      z-index: 25;
+    }
+  </style>
+</head>
+<body>
+  <h1>Deck Card Test</h1>
+  <p>Testing why side cards appear blank</p>
+
+  <div class="container">
+    <!-- Left card -->
+    <div class="deck-slot deck-slot-left">
+      <div class="card">
+        <span class="badge">Mobile App</span>
+        <h3>Trackly</h3>
+        <p>Offline-first OJT time tracking and allowance management mobile app for students and interns.</p>
+        <div class="tech-icons">
+          <div class="tech-icon">📱</div>
+          <div class="tech-icon">⚛️</div>
+          <div class="tech-icon">🔥</div>
+          <div class="tech-icon">☁️</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right card -->
+    <div class="deck-slot deck-slot-right">
+      <div class="card">
+        <span class="badge">Web App</span>
+        <h3>TaskMaster</h3>
+        <p>Project management tool with real-time collaboration features and advanced analytics.</p>
+        <div class="tech-icons">
+          <div class="tech-icon">⚛️</div>
+          <div class="tech-icon">📊</div>
+          <div class="tech-icon">🔐</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center card -->
+    <div class="deck-slot deck-slot-center">
+      <div class="card">
+        <span class="badge">Featured</span>
+        <h3>Portfolio</h3>
+        <p>Modern portfolio website built with Next.js 15, TypeScript, and Tailwind CSS.</p>
+        <div class="tech-icons">
+          <div class="tech-icon">⚛️</div>
+          <div class="tech-icon">📝</div>
+          <div class="tech-icon">🎨</div>
+          <div class="tech-icon">⚡</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+    <h2>Debugging Notes:</h2>
+    <ul>
+      <li>Check if side cards are visible with minimal overlay (5% white)</li>
+      <li>Verify text is readable on rotated/scaled cards</li>
+      <li>Test different overlay colors and opacities</li>
+      <li>Check if z-index stacking is correct</li>
+    </ul>
+  </div>
+
+  <script>
+    // Log card positions for debugging
+    document.querySelectorAll('.deck-slot').forEach((card, idx) => {
+      const rect = card.getBoundingClientRect();
+      console.log(`Card ${idx}:`, {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+        transform: window.getComputedStyle(card).transform
+      });
+    });
+  </script>
+</body>
+</html>

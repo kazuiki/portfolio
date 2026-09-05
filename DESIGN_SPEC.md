@@ -1,6 +1,8 @@
 # Portfolio Design Specification
 
-_Based on analysis of https://www.iging.tech/_
+_Based on analysis of https://www.iging.tech/ and the bryllim.com reference pattern. Last reconciled with the shipped implementation on 2026-08-31._
+
+> **Note — spec vs. implementation drift.** This document was the original brief. The built site evolved past it in a few deliberate ways (documented in §18 "Implemented Deviations"). Those deviations are **intentional** and exempt from the UI/UX audit, not defects. When this spec and the code disagree, the code is the source of truth for what shipped; this file is the contract for _future_ work.
 
 ---
 
@@ -92,8 +94,9 @@ Sidebar (260px) + Gap (32px) + Content Column (720px max) + Gap (flexible) = Vie
 
 ### Font Family
 
-- **Primary:** Inter (via next/font/google) — UI, body, headings
-- **Monospace:** JetBrains Mono or Geist Mono — section numbers, code, metadata
+- **Primary (UI/body/headings):** Geist via `next/font` (replaces the originally-specified Inter).
+- **Monospace:** Geist Mono (or `ui-monospace`) — section numbers, metadata, code, nav links, labels.
+- **Logo/name display:** "Geist Pixel" (Vercel pixel webfont, loaded via `@font-face` from jsDelivr) — used for the sidebar name, hero name, and section labels (`.font-pixel`, `.section-label`). This is the bryllim.com-style treatment that replaced the originally-specified Inter/JetBrains Mono pairing.
 
 ### Scale (rem-based, mobile-first)
 
@@ -217,9 +220,9 @@ Sidebar (260px) + Gap (32px) + Content Column (720px max) + Gap (flexible) = Vie
 
 ## 8. PROJECT SYSTEM
 
-### Card Layout (Vertical Stack, Full Width)
+### Card Layout (Vertical Stack, Full Width) — baseline spec
 
-```
+```text
 ┌─────────────────────────────────────┐
 │  [Hero Image - 16:9 or 4:3]         │  ← Full width, aspect-ratio
 ├─────────────────────────────────────┤
@@ -245,11 +248,17 @@ Sidebar (260px) + Gap (32px) + Content Column (720px max) + Gap (flexible) = Vie
 - Show first 3, then "+N" pill badge
 - Tooltip on hover (title attribute)
 
+### Implemented Project Display (shipped) — INTENTIONAL DEVIATION
+
+The desktop Projects section is **not** a static vertical stack. It is a **fanned "deck"**: three cards share one absolute anchor; the center/front card is full, the two side cards sit behind it rotated/scaled/dimmed. Clicking a back card's "View project" button (or its promote affordance) glides it to the front in a shallow mirrored arc (~850ms, `cubic-bezier(0.22, 1, 0.36, 1)`); the demoted card arcs to the back. This is the deliberate, spec-exempt hero interaction (see §18). The mobile/tablet breakpoint (`lg:hidden`) still renders the spec's plain vertical stack with `gap-6`.
+
+Project card internals (both modes): icon+name header, date + uppercase type badge, 3-line clamped description, circular tech-icon row (first 5 + `+N`), and a full-width "View project →" CTA. Front card opens `project.link`; back cards promote. No box-shadows — elevation is border + `translateY(-2px)` hover only.
+
 ### Projects Data (from user)
 
-1. **Ritmo** — Expo, TypeScript, React Native, Supabase, Godot
-
----
+1. **Trackly** — React Native, TypeScript, Expo, Supabase, SQLite, Zustand (Mobile App, "Oct 2025 – Present")
+2. **LazyStack** — Next.js, TypeScript, Tailwind (Web App, "Apr 2025 – Jun 2025")
+3. **AgriCare** — IoT, Arduino, Python, MySQL (Web App - IoT, 2024)
 
 ## 9. SECTION SYSTEM
 
@@ -361,14 +370,14 @@ Sidebar (260px) + Gap (32px) + Content Column (720px max) + Gap (flexible) = Vie
 
 ### Specific Animations
 
-| Element                 | Animation                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| Nav link hover          | Color transition 150ms                                                         |
-| Theme toggle segment    | Background/color 150ms                                                         |
-| Sidebar drawer (mobile) | Slide 200ms + fade backdrop                                                    |
-| Project card hover      | Border color + slight translateY(-2px) 150ms                                   |
-| Marquee (tech ticker)   | **Continuous linear** — infinite horizontal scroll, ~30s loop, pauses on hover |
-| Link underline          | Width transition from center 150ms                                             |
+| Element                 | Animation                                                                                                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nav link hover          | Color transition 150ms                                                                                                                                                                                                                                                                            |
+| Theme toggle segment    | Background/color 150ms                                                                                                                                                                                                                                                                            |
+| Sidebar drawer (mobile) | Slide 200ms + fade backdrop                                                                                                                                                                                                                                                                       |
+| Project card hover      | Border color + slight translateY(-2px) 150ms                                                                                                                                                                                                                                                      |
+| Marquee (tech ticker)   | **Continuous linear** — infinite horizontal scroll. Shipped value: **90s** loop (`--animate-marquee: marquee 90s linear infinite`, overridden inline to `90s` on the track), pauses on hover. (Original spec said ~30s; the slower 90s was chosen for a calmer read and is the current contract.) |
+| Link underline          | Width transition from center 150ms                                                                                                                                                                                                                                                                |
 
 ### Marquee Implementation
 
@@ -389,23 +398,26 @@ Sidebar (260px) + Gap (32px) + Content Column (720px max) + Gap (flexible) = Vie
 
 ## 13. HERO SECTION (Top of Main Content)
 
-```
+```text
 ┌──────────────────────────────────────────────┐
-│  [Avatar - 120px]                            │
+│  [Square Portrait Photo - halftone dissolve]  │  ← ~320px, grayscale, melts into page
 │                                              │
-│  John Pritch L. Arcas                        │  ← text-3xl/700
-│  IT Graduate · Aspiring Software Developer   │  ← text-base/muted
+│  John Pritch L. Arcas                        │  ← Geist Pixel, text-2xl (sm:text-[2rem])
+│  ASPIRING SOFTWARE DEVELOPER                  │  ← mono, text-xs, uppercase, tracking-wide, muted
 │                                              │
-│  [GitHub] [LinkedIn] [Email]                 │  ← Icon pills, gap-2
+│  [bio paragraphs]                            │  ← text-base muted
+│                                              │
+│  github ↗  linkedin ↗  email ↗               │  ← hero-link (mono, external arrow)
 │                                              │
 │  [Tech Marquee - scrolling icons]            │  ← Separate component
 └──────────────────────────────────────────────┘
 ```
 
-- Avatar: 120px diameter, border-radius full, `--avatar-bg` placeholder
-- Social pills: 36px height, `--border` border, `--fg-muted` text, hover `--accent`
-- Vertical padding: 64px top, 48px bottom before marquee
-- Marquee: Full width, centered, gap-8 between items
+- Portrait: square (`aspect-square`, max `280px` mobile / `min 320px` desktop), `object-cover grayscale`, with a `.halftone-photo` dot dissolve anchored to the bottom so the photo melts into the page (bryllim.com treatment). **This replaces the originally-specified 120px circular avatar.**
+- Name: Geist Pixel, `text-2xl sm:text-[2rem]`, `whitespace-nowrap`.
+- Role line: mono, `text-xs`, `tracking-[0.175em]`, uppercase, muted.
+- Social links: plain-text `hero-link` style with an external `↗` arrow (github / linkedin / email), not the pill style from the original spec.
+- Vertical padding: `pt-16 pb-12` (desktop row layout `md:flex-row`); below the links, the TechMarquee spans full width.
 
 ---
 
@@ -507,3 +519,22 @@ After implementation, verify against reference:
 - [ ] Mobile: hamburger → drawer with same sidebar content
 - [ ] Overall feel: editorial, restrained, not SaaS
 - [ ] No gradient backgrounds, no glassmorphism, no giant hero typography
+
+---
+
+## 18. IMPLEMENTED DEVIATIONS (shipped ≠ original brief)
+
+These are **deliberate** departures from the original spec (§1–§17). They are exempt from the UI/UX audit and are the current contract for the shipped site. Treat the code as authoritative where it disagrees with the earlier sections.
+
+| #   | Area                           | Original spec                      | Shipped implementation                                                                                                              | Why                                                           |
+| --- | ------------------------------ | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 1   | **Project display**            | Vertical stack of cards, 48px gap  | Desktop = fanned 3-card "deck" with click-to-promote arc animation; mobile/tablet = vertical stack (`gap-6`). `ProjectsSection.tsx` | Chosen hero interaction; more distinctive than a static list. |
+| 2   | **Hero portrait**              | 120px circular avatar              | Square grayscale photo (`~320px`) with bottom-anchored `.halftone-photo` dot dissolve. `Hero.tsx`                                   | bryllim.com-style portrait treatment.                         |
+| 3   | **Fonts**                      | Inter (UI) + JetBrains Mono (mono) | Geist (UI) + Geist Mono (mono) + "Geist Pixel" webfont for name/section labels                                                      | Matching bryllim.com typography.                              |
+| 4   | **Hero social links**          | Icon pills (`social-pill`, 36px)   | Plain-text `hero-link` with `↗` arrow (github / linkedin / email)                                                                   | Lighter, more editorial.                                      |
+| 5   | **Tech marquee duration**      | ~30s loop                          | 90s loop (`--animate-marquee: marquee 90s`, inline `animationDuration: 90s`)                                                        | Calmer scroll.                                                |
+| 6   | **Decorative halftone fields** | Not specified                      | Page-wide corner halftone backdrops (`.halftone-bg` + `mask-tr`/`mask-bl`), marquee dot rows (`.marquee-dots`), portrait dissolve   | bryllim.com texture; restrained, theme-adaptive.              |
+| 7   | **Stack section**              | In-page grid of tech items         | In-page pill row (first 12) + a dedicated `/stack` page (`StackPageContent.tsx`) reached via "view all"                             | Room to grow the stack list.                                  |
+| 8   | **Theme transition**           | Standard next-themes swap          | View Transitions API circular reveal from the toggle position (`theme-transition.ts`, `vt-circular-reveal`)                         | Polished theme switch.                                        |
+
+**Open item not yet addressed (not a deviation, a gap):** the theme-toggle segment buttons in `Sidebar.tsx` are `h-7 w-7` (28px), below the 44px minimum touch-target guideline in §4. Everything else complies.
